@@ -39,22 +39,11 @@ dict_options = {'happy': 'MOSAIC', 'anger': 'RAIN-PRINCESS', 'surprise': 'UDNIE'
 state = 'happy'
 save_image = []
 
+
 def init(state='happy'):
     effect = dict_options[state].lower()
 
-    # base_model_dir = "model"
-    # base_url = "https://github.com/onnx/models/raw/69d69010b7ed6ba9438c392943d2715026792d40/archive/vision/style_transfer/fast_neural_style/model"
-
-    # Selected ONNX model will be downloaded in the path
     model_path = Path(f"{effect}-9.onnx")
-    # print(model_path)
-
-    # style_url = f"{base_url}/{model_path}"
-    # utils.download_file(style_url, directory=base_model_dir)
-
-    # ov_model = ov.convert_model(f"model/{effect}-9.onnx")
-    # ov.save_model(ov_model, f"model/{effect}-9.xml")
-
     ir_path = Path(f"model/{effect}-9.xml")
     onnx_path = Path(f"model/{model_path}")
 
@@ -132,7 +121,7 @@ def run_style_transfer(source=0, flip=False, use_popup=False, skip_first_frames=
         
         temp = None
         while True:
-            emo = state #emotion[count]
+            emo = state 
             if emo != 'neutral' and emo != temp:
                 input_layer, output_layer, compiled_model = init(emo)
                 N, C, H, W = list(input_layer.shape)
@@ -179,7 +168,6 @@ def run_style_transfer(source=0, flip=False, use_popup=False, skip_first_frames=
                     break
                 elif key == 115:   # 's'
                     count = count+1
-                    # save_image = np.append(save_image, result_image, axis=0)
                     save_image.append(result_image)
                     print("save", count)
                 elif key == 101:   # 'e'
@@ -233,7 +221,7 @@ def dect():
                 # print(line)
                 global state
                 state = emotion[max_value]
-                print(state)
+                # print(state)
                 if flag == False:                    
                     process.terminate()
                     break
@@ -261,10 +249,16 @@ thread2.start()
 dect()
 thread2.join()
 
+fig = plt.figure(figsize=(3, 8), facecolor='black')
+
 for i in range(4):
-    plt.subplot(4, 1, i + 1)
+    # plt.subplot(4, 1, i + 1)
+    plt.subplot(4, 1, i + 1, facecolor='black')
     plt.imshow(save_image[i], cmap='gray')
     plt.axis('off')
+
+fig.suptitle('Emotional 4 frames', color='white', fontsize=16)
+plt.tight_layout()  # 서브플롯 간 간격을 조절합니다.
 plt.show()
     
 # run_style_transfer(source=source, flip=isinstance(source, int), use_popup=True)
