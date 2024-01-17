@@ -20,47 +20,54 @@ import notebook_utils as utils
  
 import ipywidgets as widgets
 
-state = 'happy'     # temp
-
+emotion = ['happy', 'sad', 'surprise', 'anger', 'neutral']
 dict_options = {'happy': 'MOSAIC', 'anger': 'RAIN-PRINCESS', 'surprise': 'UDNIE', 'sad': 'POINTILISM'}
-effect = dict_options['happy'].lower()
+state = 'happy'
 
-base_model_dir = "model"
-base_url = "https://github.com/onnx/models/raw/69d69010b7ed6ba9438c392943d2715026792d40/archive/vision/style_transfer/fast_neural_style/model"
 
-# Selected ONNX model will be downloaded in the path
-model_path = Path(f"{effect}-9.onnx")
-# print(model_path)
+def init(state='happy'):
+    effect = dict_options[state].lower()
 
-style_url = f"{base_url}/{model_path}"
-utils.download_file(style_url, directory=base_model_dir)
+    # base_model_dir = "model"
+    # base_url = "https://github.com/onnx/models/raw/69d69010b7ed6ba9438c392943d2715026792d40/archive/vision/style_transfer/fast_neural_style/model"
 
-ov_model = ov.convert_model(f"model/{effect}-9.onnx")
-ov.save_model(ov_model, f"model/{effect}-9.xml")
+    # Selected ONNX model will be downloaded in the path
+    model_path = Path(f"{effect}-9.onnx")
+    # print(model_path)
 
-ir_path = Path(f"model/{effect}-9.xml")
-onnx_path = Path(f"model/{model_path}")
+    # style_url = f"{base_url}/{model_path}"
+    # utils.download_file(style_url, directory=base_model_dir)
 
-core = ov.Core()
+    # ov_model = ov.convert_model(f"model/{effect}-9.onnx")
+    # ov.save_model(ov_model, f"model/{effect}-9.xml")
 
-model = core.read_model(model=ir_path)
+    ir_path = Path(f"model/{effect}-9.xml")
+    onnx_path = Path(f"model/{model_path}")
 
-device = widgets.Dropdown(
-    options=core.available_devices + ["AUTO"],
-    value='AUTO',
-    description='Device:',
-    disabled=False,
-)
+    core = ov.Core()
 
-compiled_model = core.compile_model(model=model, device_name=device.value)
+    model = core.read_model(model=ir_path)
 
-input_layer = compiled_model.input(0)
-output_layer = compiled_model.output(0)
+    device = widgets.Dropdown(
+        options=core.available_devices + ["AUTO"],
+        value='AUTO',
+        description='Device:',
+        disabled=False,
+    )
 
-# print(input_layer.any_name, output_layer.any_name)
-# print(input_layer.shape)
-# print(output_layer.shape)
+    compiled_model = core.compile_model(model=model, device_name=device.value)
 
+    input_layer = compiled_model.input(0)
+    output_layer = compiled_model.output(0)
+
+    # print(input_layer.any_name, output_layer.any_name)
+    # print(input_layer.shape)
+    # print(output_layer.shape)
+    
+    return input_layer, output_layer, compiled_model
+
+
+input_layer, output_layer, compiled_model = init()
 N, C, H, W = list(input_layer.shape)
 
 
@@ -125,8 +132,15 @@ def run_style_transfer(source=0, flip=False, use_popup=False, skip_first_frames=
             cv2.namedWindow(winname=title, flags=cv2.WINDOW_GUI_NORMAL | cv2.WINDOW_AUTOSIZE)
 
         processing_times = collections.deque()
-              
+        
+        temp = None
         while True:
+            emo = emotion[count]
+            if emo != 'neutral' and emo != temp:
+                input_layer, output_layer, compiled_model = init(emo)
+                N, C, H, W = list(input_layer.shape)
+                temp = emo
+            
             # Grab the frame.
             frame = player.next()
             if frame is None:
